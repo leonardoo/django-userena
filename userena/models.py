@@ -148,8 +148,8 @@ class UserenaSignup(models.Model):
             email_to = [self.user.email]
 
         self._send_email_template(context,
-                                  'userena/emails/confirmation_email_subject_{}'.format(string),
-                                  'userena/emails/confirmation_email_message_{}'.format(string),
+                                  'userena/emails/confirmation_email_subject_{0}'.format(string),
+                                  'userena/emails/confirmation_email_message_{0}'.format(string),
                                   email_to)
 
     def _send_email_template(self, context, subject_template, message_template, to):
