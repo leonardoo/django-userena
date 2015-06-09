@@ -33,7 +33,7 @@ class UserenaManagerTests(TestCase):
         """
         # Check that the fields are set.
         new_user = UserenaSignup.objects.create_user(**self.user_info)
-        self.assertEqual(new_user.username.decode('utf-8'), self.user_info['username'])
+        self.assertEqual(new_user.username, self.user_info['username'])
         self.assertEqual(new_user.email, self.user_info['email'])
         self.failUnless(new_user.check_password(self.user_info['password']))
 
@@ -161,3 +161,15 @@ class UserenaManagerTests(TestCase):
         deleted_users = UserenaSignup.objects.delete_expired_users()
 
         self.failUnlessEqual(deleted_users[0].username, 'alice')
+
+
+class UserenaManagersIssuesTests(TestCase):
+    fixtures = ['users']
+
+    def test_issue_455_printing_user_model_from_userena_signup_objects_create_user(self):
+        """
+        Issue: https://github.com/bread-and-pepper/django-userena/issues/455
+        """
+        user = UserenaSignup.objects.create_user("test", "test@t.com", "test", active=True, send_email=False)
+        # printing of user should not raise any exception
+        print(user)
