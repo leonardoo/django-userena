@@ -49,7 +49,7 @@ try:
 except ImportError:  # pragma: no cover
     from django.utils.hashcompat import sha_constructor, md5_constructor
 
-if django.VERSION < (1, 6, 0):
+if django.VERSION < (1, 7, 0):
     from django.db.models import get_model
 else:
     from userena.apps import UserenaConfig
