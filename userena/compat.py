@@ -52,5 +52,5 @@ except ImportError:  # pragma: no cover
 if django.VERSION < (1, 7, 0):
     from django.db.models import get_model
 else:
-    from userena.apps import UserenaConfig
-    get_model = UserenaConfig.get_model
+    from django.apps import apps
+    get_model = apps.get_model
