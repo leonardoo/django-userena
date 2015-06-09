@@ -2,15 +2,15 @@ from django.contrib.auth import logout, authenticate, login
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.utils.decorators import method_decorator
-from django.views.generic import CreateView
+from django.views.generic import FormView
 
 from userena.decorators import secure_required
-from userena.forms import SignupForm
+from userena.forms import SignupForm, SignupFormOnlyEmail
 from userena import signals as userena_signals
 from userena import settings as userena_settings
 
 
-class SignupView(CreateView):
+class SignupView(FormView):
 
     """
     Signup of an account.
@@ -86,8 +86,8 @@ class SignupView(CreateView):
         """
         If the form is valid, save the associated model.
         """
-        form_valid = super(SignupView, self).form_valid(form)
         # Send the signup complete signal
+        self.object = form.save()
         userena_signals.signup_complete.send(sender=None,
                                              user=self.object)
 
@@ -96,8 +96,8 @@ class SignupView(CreateView):
             logout(self.request)
 
         if (userena_settings.USERENA_SIGNIN_AFTER_SIGNUP and
-            not userena_settings.USERENA_ACTIVATION_REQUIRED):
+           not userena_settings.USERENA_ACTIVATION_REQUIRED):
             user = authenticate(identification=self.object.email, check_password=False)
             login(self.request, user)
 
-        return form_valid
+        return super(SignupView, self).form_valid(form)
