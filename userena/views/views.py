@@ -1,6 +1,6 @@
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, logout, REDIRECT_FIELD_NAME
+from django.contrib.auth import authenticate, login, REDIRECT_FIELD_NAME
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.views import logout as Signout
 from django.views.generic import TemplateView
@@ -10,8 +10,7 @@ from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext as _
 from django.http import Http404, HttpResponseRedirect
 
-from userena.forms import (SignupForm, SignupFormOnlyEmail, AuthenticationForm,
-                           ChangeEmailForm, EditProfileForm)
+from userena.forms import (AuthenticationForm,ChangeEmailForm, EditProfileForm)
 from userena.models import UserenaSignup
 from userena.decorators import secure_required
 from userena.utils import (signin_redirect, get_profile_model, get_user_model,
@@ -69,81 +68,6 @@ class ProfileListView(ListView):
         queryset = profile_model.objects.get_visible_profiles(self.request.user).select_related()
         return queryset
 
-@secure_required
-def signup(request, signup_form=SignupForm,
-           template_name='userena/signup_form.html', success_url=None,
-           extra_context=None):
-    """
-    Signup of an account.
-
-    Signup requiring a username, email and password. After signup a user gets
-    an email with an activation link used to activate their account. After
-    successful signup redirects to ``success_url``.
-
-    :param signup_form:
-        Form that will be used to sign a user. Defaults to userena's
-        :class:`SignupForm`.
-
-    :param template_name:
-        String containing the template name that will be used to display the
-        signup form. Defaults to ``userena/signup_form.html``.
-
-    :param success_url:
-        String containing the URI which should be redirected to after a
-        successful signup. If not supplied will redirect to
-        ``userena_signup_complete`` view.
-
-    :param extra_context:
-        Dictionary containing variables which are added to the template
-        context. Defaults to a dictionary with a ``form`` key containing the
-        ``signup_form``.
-
-    **Context**
-
-    ``form``
-        Form supplied by ``signup_form``.
-
-    """
-    # If signup is disabled, return 403
-    if userena_settings.USERENA_DISABLE_SIGNUP:
-        raise PermissionDenied
-
-    # If no usernames are wanted and the default form is used, fallback to the
-    # default form that doesn't display to enter the username.
-    if userena_settings.USERENA_WITHOUT_USERNAMES and (signup_form == SignupForm):
-        signup_form = SignupFormOnlyEmail
-
-    form = signup_form()
-
-    if request.method == 'POST':
-        form = signup_form(request.POST, request.FILES)
-        if form.is_valid():
-            user = form.save()
-
-            # Send the signup complete signal
-            userena_signals.signup_complete.send(sender=None,
-                                                 user=user)
-
-
-            if success_url: redirect_to = success_url
-            else: redirect_to = reverse('userena_signup_complete',
-                                        kwargs={'username': user.username})
-
-            # A new signed user should logout the old one.
-            if request.user.is_authenticated():
-                logout(request)
-
-            if (userena_settings.USERENA_SIGNIN_AFTER_SIGNUP and
-                not userena_settings.USERENA_ACTIVATION_REQUIRED):
-                user = authenticate(identification=user.email, check_password=False)
-                login(request, user)
-
-            return redirect(redirect_to)
-
-    if not extra_context: extra_context = dict()
-    extra_context['form'] = form
-    return ExtraContextTemplateView.as_view(template_name=template_name,
-                                            extra_context=extra_context)(request)
 
 @secure_required
 def activate(request, activation_key,
