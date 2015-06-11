@@ -19,7 +19,7 @@ class SignupView(FormView):
     an email with an activation link used to activate their account. After
     successful signup redirects to ``success_url``.
 
-    :param signup_form:
+    :param form_class:
         Form that will be used to sign a user. Defaults to userena's
         :class:`SignupForm`.
 
@@ -40,12 +40,13 @@ class SignupView(FormView):
     **Context**
 
     ``form``
-        Form supplied by ``signup_form``.
+        Form supplied by ``form_class``.
 
     """
 
     template_name = 'userena/signup_form.html'
-    form = SignupForm
+    form_class = SignupForm
+    extra_context = None
 
     @method_decorator(secure_required)
     def dispatch(self, request, *args, **kwargs):
@@ -54,6 +55,26 @@ class SignupView(FormView):
         if userena_settings.USERENA_DISABLE_SIGNUP:
             raise PermissionDenied
         return super(SignupView, self).dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        """
+        If the form is valid, save the associated model.
+        """
+        # Send the signup complete signal
+        self.object = form.save()
+        userena_signals.signup_complete.send(sender=None,
+                                             user=self.object)
+
+        # A new signed user should logout the old one.
+        if self.request.user.is_authenticated():
+            logout(self.request)
+
+        if (userena_settings.USERENA_SIGNIN_AFTER_SIGNUP and
+           not userena_settings.USERENA_ACTIVATION_REQUIRED):
+            user = authenticate(identification=self.object.email, check_password=False)
+            login(self.request, user)
+
+        return super(SignupView, self).form_valid(form)
 
     def get_context_data(self, *args, **kwargs):
         context = super(SignupView, self).get_context_data(*args, **kwargs)
@@ -78,26 +99,5 @@ class SignupView(FormView):
         if self.success_url:
             url = self.success_url
         else:
-            url = reverse('userena_signup_complete',
-                          kwargs={'username': self.object.username})
+            url = reverse('userena_signup_complete', kwargs={'username': self.object.username})
         return url
-
-    def form_valid(self, form):
-        """
-        If the form is valid, save the associated model.
-        """
-        # Send the signup complete signal
-        self.object = form.save()
-        userena_signals.signup_complete.send(sender=None,
-                                             user=self.object)
-
-        # A new signed user should logout the old one.
-        if self.request.user.is_authenticated():
-            logout(self.request)
-
-        if (userena_settings.USERENA_SIGNIN_AFTER_SIGNUP and
-           not userena_settings.USERENA_ACTIVATION_REQUIRED):
-            user = authenticate(identification=self.object.email, check_password=False)
-            login(self.request, user)
-
-        return super(SignupView, self).form_valid(form)
