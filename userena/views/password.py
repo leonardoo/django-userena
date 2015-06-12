@@ -1,6 +1,5 @@
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.urlresolvers import reverse
-from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.generic import UpdateView
 
