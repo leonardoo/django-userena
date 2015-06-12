@@ -98,7 +98,7 @@ urlpatterns = patterns('',
 
     # Edit profile
     url(r'^(?P<username>[\@\.\w-]+)/edit/$',
-       userena_views.profile_edit,
+       userena_views.ProfileEditView.as_view(),
        name='userena_profile_edit'),
 
     # View profiles
