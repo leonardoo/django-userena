@@ -103,7 +103,7 @@ urlpatterns = patterns('',
 
     # View profiles
     url(r'^(?P<username>(?!signout|signup|signin)[\@\.\w-]+)/$',
-       userena_views.profile_detail,
+       userena_views.ProfileDetailView.as_view(),
        name='userena_profile_detail'),
     url(r'^page/(?P<page>[0-9]+)/$',
        userena_views.ProfileListView.as_view(),

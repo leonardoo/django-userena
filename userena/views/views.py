@@ -2,7 +2,6 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.views import logout as Signout
-from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.http import Http404
 from django.shortcuts import redirect, get_object_or_404
@@ -545,38 +544,7 @@ def profile_edit(request, username, edit_profile_form=EditProfileForm,
     extra_context['profile'] = profile
     return ExtraContextTemplateView.as_view(template_name=template_name,
                                             extra_context=extra_context)(request)
-def profile_detail(request, username,
-    template_name=userena_settings.USERENA_PROFILE_DETAIL_TEMPLATE,
-    extra_context=None, **kwargs):
-    """
-    Detailed view of an user.
 
-    :param username:
-        String of the username of which the profile should be viewed.
-
-    :param template_name:
-        String representing the template name that should be used to display
-        the profile.
-
-    :param extra_context:
-        Dictionary of variables which should be supplied to the template. The
-        ``profile`` key is always the current profile.
-
-    **Context**
-
-    ``profile``
-        Instance of the currently viewed ``Profile``.
-
-    """
-    user = get_object_or_404(get_user_model(), username__iexact=username)
-    profile = get_user_profile(user=user)
-    if not profile.can_view_profile(request.user):
-        raise PermissionDenied
-    if not extra_context: extra_context = dict()
-    extra_context['profile'] = profile
-    extra_context['hide_email'] = userena_settings.USERENA_HIDE_EMAIL
-    return ExtraContextTemplateView.as_view(template_name=template_name,
-                                            extra_context=extra_context)(request)
 
 def profile_list(request, page=1, template_name='userena/profile_list.html',
                  paginate_by=50, extra_context=None, **kwargs): # pragma: no cover
