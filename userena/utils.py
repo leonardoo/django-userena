@@ -193,3 +193,30 @@ try:
 except ImportError:
     def get_user_model():
         return get_model(*user_model_label.rsplit('.', 1))
+
+
+def get_request_field(request, name, default=None):
+
+    """
+    This method try to replace request.REQUEST because was depreced
+    in django 1.7
+
+    Try to get a field in http (GET, POST) methods
+
+    :param request:
+        request.
+
+    :param name:
+        String defining the name of the field to get.
+
+    :param default:
+        Var which contains the default value to return when the field is not in
+        the request. Defaults to ``None``
+    """
+
+    for method_name in ("GET", "POST"):
+        method = getattr(request, method_name)
+        field = method.get(name, None)
+        if field:
+            break
+    return field if field else default

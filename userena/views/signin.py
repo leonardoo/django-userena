@@ -7,7 +7,7 @@ from django.utils.translation import ugettext as _
 
 from userena.decorators import secure_required
 from userena.forms import (AuthenticationForm)
-from userena.utils import (signin_redirect)
+from userena.utils import (signin_redirect, get_request_field)
 from userena import signals as userena_signals
 from userena import settings as userena_settings
 
@@ -76,17 +76,14 @@ class SigninView(FormView):
         self.object = user
         if user.is_active:
             login(self.request, user)
-            if remember_me:
-                self.request.session.set_expiry(userena_settings.USERENA_REMEMBER_ME_DAYS[1] * 86400)
-            else:
-                self.request.session.set_expiry(0)
+            expiry = 0 if not remember_me else userena_settings.USERENA_REMEMBER_ME_DAYS[1] * 86400
+            self.request.session.set_expiry(expiry)
 
             if userena_settings.USERENA_USE_MESSAGES:
                 messages.success(self.request, _('You have been signed in.'), fail_silently=True)
 
-            #send a signal that a user has signed in
+            # send a signal that a user has signed in
             userena_signals.account_signin.send(sender=None, user=user)
-
 
         return super(SigninView, self).form_valid(form)
 
@@ -95,7 +92,7 @@ class SigninView(FormView):
         if self.extra_context:
             context.update(self.extra_context)
             context.update({
-                'next': self.REQUEST.get(self.redirect_field_name),
+                'next': self.redirect_field(),
             })
         return context
 
@@ -104,12 +101,10 @@ class SigninView(FormView):
         Returns the supplied URL.
         """
         if self.object.is_active:
-            return signin_redirect(redirect=self.REQUEST.get(self.redirect_field_name),
+            return signin_redirect(redirect=self.redirect_field(),
                                    user=self.object)
         else:
             return reverse('userena_disabled', kwargs={'username': self.object.username})
 
-    @property
-    def REQUEST(self):
-        return getattr(self.request, self.request.method)
-
+    def redirect_field(self):
+        return get_request_field(self.request, self.redirect_field_name)
