@@ -89,7 +89,7 @@ urlpatterns = patterns('',
 
     # Change password
     url(r'^(?P<username>[\@\.\w-]+)/password/$',
-       userena_views.password_change,
+       userena_views.PasswordChangeView.as_view(),
        name='userena_password_change'),
     url(r'^(?P<username>[\@\.\w-]+)/password/complete/$',
        userena_views.direct_to_user_template,

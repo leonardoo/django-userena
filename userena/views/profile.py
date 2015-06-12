@@ -113,7 +113,6 @@ class ProfileEditView(UpdateView):
     template_name='userena/profile_form.html'
     extra_context = None
 
-
     @method_decorator(secure_required)
     @method_decorator(permission_required_or_403('change_profile', (get_profile_model(), 'user__username', 'username')))
     def dispatch(self, request, *args, **kwargs):
