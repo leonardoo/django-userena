@@ -67,7 +67,7 @@ urlpatterns = patterns('',
 
     # Change email and confirm it
     url(r'^(?P<username>[\@\.\w-]+)/email/$',
-       userena_views.email_change,
+       userena_views.EmailChangeView.as_view(),
        name='userena_email_change'),
     url(r'^(?P<username>[\@\.\w-]+)/email/complete/$',
        userena_views.direct_to_user_template,
