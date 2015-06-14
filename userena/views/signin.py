@@ -11,8 +11,10 @@ from userena.utils import (signin_redirect, get_request_field)
 from userena import signals as userena_signals
 from userena import settings as userena_settings
 
+from .mixins import ExtraContextMixin
 
-class SigninView(FormView):
+
+class SigninView(ExtraContextMixin, FormView):
 
     """
     Signin using email or username with password.
@@ -89,11 +91,9 @@ class SigninView(FormView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(SigninView, self).get_context_data(*args, **kwargs)
-        if self.extra_context:
-            context.update(self.extra_context)
-            context.update({
-                'next': self.redirect_field(),
-            })
+        context.update({
+            'next': self.redirect_field(),
+        })
         return context
 
     def get_success_url(self):

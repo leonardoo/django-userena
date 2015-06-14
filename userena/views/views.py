@@ -8,27 +8,18 @@ from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import TemplateView
 from django.utils.translation import ugettext as _
 
-from userena.forms import (ChangeEmailForm)
 from userena.models import UserenaSignup
 from userena.decorators import secure_required
-from userena.utils import (get_profile_model, get_user_model,
-                           get_user_profile)
+from userena.utils import (get_user_model, get_user_profile)
 from userena import signals as userena_signals
 from userena import settings as userena_settings
 
 from guardian.decorators import permission_required_or_403
 
-import warnings
+from .mixins import ExtraContextMixin
 
-class ExtraContextTemplateView(TemplateView):
-    """ Add extra context to a simple template view """
-    extra_context = None
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(ExtraContextTemplateView, self).get_context_data(*args, **kwargs)
-        if self.extra_context:
-            context.update(self.extra_context)
-        return context
+class ExtraContextTemplateView(ExtraContextMixin, TemplateView):
 
     # this view is used in POST requests, e.g. signup when the form is not valid
     post = TemplateView.get
@@ -295,77 +286,6 @@ def signout(request, next_page=userena_settings.USERENA_REDIRECT_ON_SIGNOUT,
         messages.success(request, _('You have been signed out.'), fail_silently=True)
     userena_signals.account_signout.send(sender=None, user=request.user)
     return Signout(request, next_page, template_name, *args, **kwargs)
-
-@secure_required
-@permission_required_or_403('change_user', (get_user_model(), 'username', 'username'))
-def email_change(request, username, email_form=ChangeEmailForm,
-                 template_name='userena/email_form.html', success_url=None,
-                 extra_context=None):
-    """
-    Change email address
-
-    :param username:
-        String of the username which specifies the current account.
-
-    :param email_form:
-        Form that will be used to change the email address. Defaults to
-        :class:`ChangeEmailForm` supplied by userena.
-
-    :param template_name:
-        String containing the template to be used to display the email form.
-        Defaults to ``userena/email_form.html``.
-
-    :param success_url:
-        Named URL where the user will get redirected to when successfully
-        changing their email address.  When not supplied will redirect to
-        ``userena_email_complete`` URL.
-
-    :param extra_context:
-        Dictionary containing extra variables that can be used to render the
-        template. The ``form`` key is always the form supplied by the keyword
-        argument ``form`` and the ``user`` key by the user whose email address
-        is being changed.
-
-    **Context**
-
-    ``form``
-        Form that is used to change the email address supplied by ``form``.
-
-    ``account``
-        Instance of the ``Account`` whose email address is about to be changed.
-
-    **Todo**
-
-    Need to have per-object permissions, which enables users with the correct
-    permissions to alter the email address of others.
-
-    """
-    user = get_object_or_404(get_user_model(), username__iexact=username)
-    prev_email = user.email
-    form = email_form(user)
-
-    if request.method == 'POST':
-        form = email_form(user, request.POST, request.FILES)
-
-        if form.is_valid():
-            form.save()
-
-            if success_url:
-                # Send a signal that the email has changed
-                userena_signals.email_change.send(sender=None,
-                                                  user=user,
-                                                  prev_email=prev_email,
-                                                  new_email=user.email)
-                redirect_to = success_url
-            else: redirect_to = reverse('userena_email_change_complete',
-                                        kwargs={'username': user.username})
-            return redirect(redirect_to)
-
-    if not extra_context: extra_context = dict()
-    extra_context['form'] = form
-    extra_context['profile'] = get_user_profile(user=user)
-    return ExtraContextTemplateView.as_view(template_name=template_name,
-                                            extra_context=extra_context)(request)
 
 @secure_required
 @permission_required_or_403('change_user', (get_user_model(), 'username', 'username'))

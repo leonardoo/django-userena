@@ -14,8 +14,10 @@ from userena.utils import (get_profile_model, get_user_model, get_user_profile)
 from userena import signals as userena_signals
 from userena import settings as userena_settings
 
+from .mixins import ExtraContextMixin
 
-class ProfileDetailView(DetailView):
+
+class ProfileDetailView(ExtraContextMixin, DetailView):
 
     """
     Detailed view of an user.
@@ -47,12 +49,6 @@ class ProfileDetailView(DetailView):
         'hide_email': userena_settings.USERENA_HIDE_EMAIL
     }
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(ProfileDetailView, self).get_context_data(*args, **kwargs)
-        if self.extra_context:
-            context.update(self.extra_context)
-        return context
-
     def get_object(self, queryset=None):
         obj = super(ProfileDetailView, self).get_object()
         profile = get_user_profile(user=obj)
@@ -61,7 +57,7 @@ class ProfileDetailView(DetailView):
         return profile
 
 
-class ProfileEditView(UpdateView):
+class ProfileEditView(ExtraContextMixin ,UpdateView):
 
     """
     Edit profile.
@@ -110,7 +106,7 @@ class ProfileEditView(UpdateView):
     slug_url_kwarg = 'username'
     slug_field = "username__iexact"
     success_url = None
-    template_name='userena/profile_form.html'
+    template_name = 'userena/profile_form.html'
     extra_context = None
 
     @method_decorator(secure_required)
@@ -153,21 +149,17 @@ class ProfileEditView(UpdateView):
         return form_valid
 
 
-class ProfileListView(ListView):
+class ProfileListView(ExtraContextMixin, ListView):
     """ Lists all profiles """
     context_object_name = 'profile_list'
     paginate_by = 50
     template_name = userena_settings.USERENA_PROFILE_LIST_TEMPLATE
-    extra_context = None
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
-        context = super(ProfileListView, self).get_context_data(**kwargs)
         if userena_settings.USERENA_DISABLE_PROFILE_LIST and not self.request.user.is_staff:
             raise Http404
-        if not self.extra_context: self.extra_context = dict()
-        context['extra_context'] = self.extra_context
-
+        context = super(ProfileListView, self).get_context_data(**kwargs)
         return context
 
     def get_queryset(self):

@@ -9,8 +9,10 @@ from userena.forms import SignupForm, SignupFormOnlyEmail
 from userena import signals as userena_signals
 from userena import settings as userena_settings
 
+from .mixins import ExtraContextMixin
 
-class SignupView(FormView):
+
+class SignupView(ExtraContextMixin, FormView):
 
     """
     Signup of an account.
@@ -46,7 +48,6 @@ class SignupView(FormView):
 
     template_name = 'userena/signup_form.html'
     form_class = SignupForm
-    extra_context = None
 
     @method_decorator(secure_required)
     def dispatch(self, request, *args, **kwargs):
@@ -75,12 +76,6 @@ class SignupView(FormView):
             login(self.request, user)
 
         return super(SignupView, self).form_valid(form)
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(SignupView, self).get_context_data(*args, **kwargs)
-        if self.extra_context:
-            context.update(self.extra_context)
-        return context
 
     def get_form_class(self):
         """
