@@ -155,10 +155,10 @@ class ProfileEditView(UpdateView):
 
 class ProfileListView(ListView):
     """ Lists all profiles """
-    context_object_name='profile_list'
-    paginate_by=50
-    template_name=userena_settings.USERENA_PROFILE_LIST_TEMPLATE
-    extra_context=None
+    context_object_name = 'profile_list'
+    paginate_by = 50
+    template_name = userena_settings.USERENA_PROFILE_LIST_TEMPLATE
+    extra_context = None
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
