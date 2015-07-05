@@ -17,6 +17,9 @@ from userena import settings as userena_settings
 from .mixins import ExtraContextMixin
 
 
+PROFILE_TEMPLATE = userena_settings.USERENA_PROFILE_DETAIL_TEMPLATE
+
+
 class ProfileDetailView(ExtraContextMixin, DetailView):
 
     """
@@ -40,14 +43,12 @@ class ProfileDetailView(ExtraContextMixin, DetailView):
 
     """
 
+    context_object_name = "profile"
+    extra_context = {'hide_email': userena_settings.USERENA_HIDE_EMAIL}
     model = get_user_model()
+    template_name = PROFILE_TEMPLATE
     slug_url_kwarg = 'username'
     slug_field = "username__iexact"
-    template_name = userena_settings.USERENA_PROFILE_DETAIL_TEMPLATE
-    context_object_name = "profile"
-    extra_context = {
-        'hide_email': userena_settings.USERENA_HIDE_EMAIL
-    }
 
     def get_object(self, queryset=None):
         obj = super(ProfileDetailView, self).get_object()
@@ -57,7 +58,7 @@ class ProfileDetailView(ExtraContextMixin, DetailView):
         return profile
 
 
-class ProfileEditView(ExtraContextMixin ,UpdateView):
+class ProfileEditView(ExtraContextMixin, UpdateView):
 
     """
     Edit profile.
@@ -163,6 +164,44 @@ class ProfileListView(ExtraContextMixin, ListView):
         return context
 
     def get_queryset(self):
-        profile_model = get_profile_model()
-        queryset = profile_model.objects.get_visible_profiles(self.request.user).select_related()
+        model = get_profile_model()
+        queryset = model.objects.get_visible_profiles(self.request.user)
+        queryset = queryset.select_related()
         return queryset
+
+
+def profile_detail(request,
+                   template_name=PROFILE_TEMPLATE,
+                   extra_context=None,
+                   url_field='username',
+                   field_method="iexact",
+                   **kwargs):
+    """
+    Detailed view of an user.
+
+    :param template_name:
+        String representing the template name that should be used to display
+        the profile.
+
+    :param extra_context:
+        Dictionary of variables which should be supplied to the template. The
+        ``profile`` key is always the current profile.
+
+    :param url_field:
+        Field in model for view search the profile.
+
+    :param url_field:
+        String that indicate the method for search in the model, must be exact,
+        like iexact, and must be a QuerySet method.
+
+    **Context**
+
+    ``profile``
+        Instance of the currently viewed ``Profile``.
+    """
+
+    slug_field = "{0}__{1}".format(url_field, field_method)
+    return ProfileDetailView.as_view(template_name=template_name,
+                                     extra_context=extra_context,
+                                     slug_url_kwarg=url_field,
+                                     slug_field=slug_field)(request, **kwargs)
