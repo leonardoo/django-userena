@@ -11,3 +11,4 @@ if django.VERSION < (1, 6):
     from .tests_models import *
     from .tests_utils import *
     from .tests_views import *
+    from .tests_views_with_new_urls import *
